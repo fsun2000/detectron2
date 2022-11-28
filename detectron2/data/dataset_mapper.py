@@ -140,6 +140,7 @@ class DatasetMapper:
         if self.recompute_boxes:
             instances.gt_boxes = instances.gt_masks.get_bounding_boxes()
         dataset_dict["instances"] = utils.filter_empty_instances(instances)
+        
 
     def __call__(self, dataset_dict):
         """
@@ -156,6 +157,8 @@ class DatasetMapper:
 
         # USER: Remove if you don't do semantic/panoptic segmentation.
         if "sem_seg_file_name" in dataset_dict:
+#             print("remove line 161 from detectron2/detectron2/data/dataset_mapper.py")
+#             sem_seg_gt = utils.read_image("/project/fsun/data/scannet/scans/scene0000_00/label-filt-scannet20/0.png", "L").squeeze(2)
             sem_seg_gt = utils.read_image(dataset_dict.pop("sem_seg_file_name"), "L").squeeze(2)
         else:
             sem_seg_gt = None

@@ -1,3 +1,7 @@
+"""
+Note from Feng: adjust variable 'M2F_PRED_SAVE_FOLDER_NAME' to the target folder name of saved m2f mask preds.
+"""
+
 # Copyright (c) Facebook, Inc. and its affiliates.
 import datetime
 import logging
@@ -7,9 +11,18 @@ from contextlib import ExitStack, contextmanager
 from typing import List, Union
 import torch
 from torch import nn
+from pathlib import Path
+from PIL import Image
+import numpy as np
 
-from detectron2.utils.comm import get_world_size, is_main_process
+from detectron2.utils.comm import get_world_size, is_main_process#, reduce_dict
 from detectron2.utils.logger import log_every_n_seconds
+# from detectron2.utils.events import EventStorage, get_event_storage
+
+
+M2F_PRED_SAVE_FOLDER_NAME = None
+
+
 
 
 class DatasetEvaluator:
@@ -123,9 +136,15 @@ def inference_on_dataset(
     Returns:
         The return value of `evaluator.evaluate()`
     """
+#     if is_main_process():
+#         event_storage = get_event_storage()
+        
     num_devices = get_world_size()
     logger = logging.getLogger(__name__)
     logger.info("Start inference on {} batches".format(len(data_loader)))
+    
+    if M2F_PRED_SAVE_FOLDER_NAME is not None:
+        logger.info("Saving Mask2Former predicted masks in each scan folder...")
 
     total = len(data_loader)  # inference data loader must have a fixed length
     if evaluator is None:
@@ -156,6 +175,38 @@ def inference_on_dataset(
 
             start_compute_time = time.perf_counter()
             outputs = model(inputs)
+            
+#             # Validation loss
+#             print("new loss_dict: ", outputs)
+#             losses = sum(outputs.values())
+#             assert torch.isfinite(losses).all(), outputs
+
+#             loss_dict_reduced = {"val_" + k: v.item() for k, v in reduce_dict(outputs).items()}
+#             print("loss_dict_reduced: ", loss_dict_reduced)
+#             losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+#             print("losses_reduced", losses_reduced)
+            
+            
+#             if is_main_process():
+#                 event_storage.put_scalars(val_total_loss=losses_reduced, 
+#                                           **loss_dict_reduced)            
+            
+            # Optionally save Mask2Former predicted masks
+            if M2F_PRED_SAVE_FOLDER_NAME is not None:
+                file_name = inputs[0]['file_name']
+                new_file_name = file_name.split("/")
+                new_file_name[-2] = M2F_PRED_SAVE_FOLDER_NAME
+                
+                mask_dir = "/".join(new_file_name[:-1])
+                new_file_name = "/".join(new_file_name)
+                
+                Path(mask_dir).mkdir(parents=True, exist_ok=True)
+            
+                res = torch.softmax(outputs[0]['sem_seg'], dim=0)
+                pred = res.data.max(0)[1].detach().cpu().numpy().astype(np.uint8)
+                pred_im = Image.fromarray(pred)
+                pred_im.save(new_file_name)
+            
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time
@@ -181,7 +232,7 @@ def inference_on_dataset(
                         f"Total: {total_seconds_per_iter:.4f} s/iter. "
                         f"ETA={eta}"
                     ),
-                    n=5,
+                    n=15,
                 )
             start_data_time = time.perf_counter()
 

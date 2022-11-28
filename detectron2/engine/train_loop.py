@@ -140,6 +140,7 @@ class TrainerBase:
 
         self.iter = self.start_iter = start_iter
         self.max_iter = max_iter
+        
 
         with EventStorage(start_iter) as self.storage:
             try:
@@ -270,6 +271,7 @@ class SimpleTrainer(TrainerBase):
         """
         If you want to do something with the losses, you can wrap the model.
         """
+        
         loss_dict = self.model(data)
         if isinstance(loss_dict, torch.Tensor):
             losses = loss_dict
@@ -383,12 +385,16 @@ class AMPTrainer(SimpleTrainer):
         """
         Implement the AMP training logic.
         """
+        
         assert self.model.training, "[AMPTrainer] model was changed to eval mode!"
         assert torch.cuda.is_available(), "[AMPTrainer] CUDA is required for AMP training!"
         from torch.cuda.amp import autocast
 
         start = time.perf_counter()
         data = next(self._data_loader_iter)
+        
+        
+        
         data_time = time.perf_counter() - start
 
         with autocast():
