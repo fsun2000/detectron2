@@ -126,6 +126,7 @@ class SemSegEvaluator(DatasetEvaluator):
         * Mean pixel accuracy averaged across classes (mACC)
         * Pixel Accuracy (pACC)
         """
+                
         if self._distributed:
             synchronize()
             conf_matrix_list = all_gather(self._conf_matrix)

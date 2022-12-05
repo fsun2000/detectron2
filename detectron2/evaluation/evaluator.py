@@ -14,13 +14,15 @@ from torch import nn
 from pathlib import Path
 from PIL import Image
 import numpy as np
+import os
 
 from detectron2.utils.comm import get_world_size, is_main_process#, reduce_dict
 from detectron2.utils.logger import log_every_n_seconds
 # from detectron2.utils.events import EventStorage, get_event_storage
 
 
-M2F_PRED_SAVE_FOLDER_NAME = None
+M2F_PRED_SAVE_FOLDER_NAME = os.getenv('M2F_PRED_SAVE_FOLDER_NAME')
+print("M2F_PRED_SAVE_FOLDER_NAME from environment variables: ", M2F_PRED_SAVE_FOLDER_NAME)
 
 
 
@@ -176,21 +178,6 @@ def inference_on_dataset(
             start_compute_time = time.perf_counter()
             outputs = model(inputs)
             
-#             # Validation loss
-#             print("new loss_dict: ", outputs)
-#             losses = sum(outputs.values())
-#             assert torch.isfinite(losses).all(), outputs
-
-#             loss_dict_reduced = {"val_" + k: v.item() for k, v in reduce_dict(outputs).items()}
-#             print("loss_dict_reduced: ", loss_dict_reduced)
-#             losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-#             print("losses_reduced", losses_reduced)
-            
-            
-#             if is_main_process():
-#                 event_storage.put_scalars(val_total_loss=losses_reduced, 
-#                                           **loss_dict_reduced)            
-            
             # Optionally save Mask2Former predicted masks
             if M2F_PRED_SAVE_FOLDER_NAME is not None:
                 file_name = inputs[0]['file_name']
@@ -232,7 +219,7 @@ def inference_on_dataset(
                         f"Total: {total_seconds_per_iter:.4f} s/iter. "
                         f"ETA={eta}"
                     ),
-                    n=15,
+                    n=5,
                 )
             start_data_time = time.perf_counter()
 

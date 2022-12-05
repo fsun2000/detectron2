@@ -616,6 +616,8 @@ Alternatively, you can call evaluation functions yourself (see Colab balloon tut
                     )
                     results[dataset_name] = {}
                     continue
+                    
+                    
             results_i = inference_on_dataset(model, test_data_loader, evaluator)
 
             results[dataset_name] = results_i

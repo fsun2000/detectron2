@@ -462,6 +462,7 @@ def _test_loader_from_config(cfg, dataset_name, mapper=None):
         "mapper": mapper,
         "num_workers": cfg.DATALOADER.NUM_WORKERS,
         "sampler": InferenceSampler(len(dataset)),
+        "test_inference_batch_size": cfg.TEST.INFERENCE_BATCH_SIZE
     }
 
 
@@ -474,6 +475,7 @@ def build_detection_test_loader(
     batch_size: int = 1,
     num_workers: int = 0,
     collate_fn: Optional[Callable[[List[Any]], Any]] = None,
+    test_inference_batch_size: int = 1,
 ) -> torchdata.DataLoader:
     """
     Similar to `build_detection_train_loader`, with default batch size = 1,
@@ -520,9 +522,11 @@ def build_detection_test_loader(
     else:
         if sampler is None:
             sampler = InferenceSampler(len(dataset))
+            
+        
     return torchdata.DataLoader(
         dataset,
-        batch_size=batch_size,
+        batch_size=test_inference_batch_size,
         sampler=sampler,
         drop_last=False,
         num_workers=num_workers,
