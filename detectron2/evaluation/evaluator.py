@@ -179,7 +179,7 @@ def inference_on_dataset(
             outputs = model(inputs)
             
             # Optionally save Mask2Former predicted masks
-            if M2F_PRED_SAVE_FOLDER_NAME is not None:
+            if M2F_PRED_SAVE_FOLDER_NAME not in ['None', '']:
                 file_name = inputs[0]['file_name']
                 new_file_name = file_name.split("/")
                 new_file_name[-2] = M2F_PRED_SAVE_FOLDER_NAME
